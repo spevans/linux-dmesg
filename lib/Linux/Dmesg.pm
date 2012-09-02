@@ -1,0 +1,211 @@
+package Linux::Dmesg;
+
+use 5.006000;
+use strict;
+use warnings;
+use Carp;
+
+require Exporter;
+
+our @ISA = qw(Exporter);
+
+# Items to export into callers namespace by default. Note: do not export
+# names by default without a very good reason. Use EXPORT_OK instead.
+# Do not simply export all your public functions/methods/constants.
+
+# This allows declaration	use Linux::Dmesg ':all';
+# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
+# will save memory.
+our %EXPORT_TAGS = (
+                    funcs => [ qw/ dmesg
+                                   read_buffer
+                                   read_clear_buffer
+                                   clear_buffer
+                                   disable_printk
+                                   enable_printk
+                                   printk_level
+                                   unread_count
+                                   buffer_size/ ],
+                    consts => [ qw/ KERN_EMERG
+                                    KERN_ALERT
+                                    KERN_CRIT
+                                    KERN_ERR
+                                    KERN_WARNING
+                                    KERN_NOTICE
+                                    KERN_INFO
+                                    KERN_DEBUG /]
+                    );
+
+our @EXPORT_OK = map { @$_ } values %EXPORT_TAGS;
+$EXPORT_TAGS{all} = [ @EXPORT_OK ];
+
+our $VERSION = '0.01';
+
+require XSLoader;
+XSLoader::load('Linux::Dmesg', $VERSION);
+
+# Preloaded methods go here.
+
+sub dmesg {
+    my $level = shift;
+
+    my $dmesg = read_buffer();
+    if (defined $dmesg) {
+        if (defined $level) {
+            my $re = qr/^<([0-$level]>.*?\n|\d>)/;
+            $dmesg =~ s/^$re//mg;
+        } else {
+            $dmesg =~ s/^<\d>//mg;
+        }
+    }
+
+    return $dmesg;
+}
+
+
+1;
+__END__
+# Below is stub documentation for your module. You'd better edit it!
+
+=head1 NAME
+
+Linux::Dmesg - Perl extension for access to klogctl() functions. This allows reading
+from the kernel console printk buffer as used by the dmesg(8) command.
+
+=head1 SYNOPSIS
+
+use Linux::Dmesg;
+
+my $dmesg = Linux::Dmesg::dmesg;
+
+
+=head1 DESCRIPTION
+
+The Linux::Dmesg module allows direct access to the functions provided by the klogctl(2)
+interface. The most common usage is to read the kernel printk console buffer. The root user
+also has access to other functions to clear the buffer, enable/disable the logging and set
+the logging levels.
+
+=head1 FUNCTIONS
+
+The following functions are exported by the C<Linux::Dmesg> module.
+None of these functions are exported by default.
+
+=over 4
+
+=item dmesg($level)
+
+Returns the current kernel message bufffer ring. The log level at the start of each line
+is removed. An optional level can be specified and only messages at this level or lower
+will be returned. See LEVELs below.
+
+=item read_buffer
+
+Returns the current kernel message buffer ring without removing the log level at the start
+of each line.
+
+=item read_clear_buffer
+
+Returns and clears the current kernel message buffer ring without removing the log level at the start
+of each line. Requires root permission.
+
+=item clear_buffer
+
+Clears the current kernel message buffer ring. Requires root permission.
+
+=item disable_printk
+
+Disables printk to the console. Requires root permission.
+
+=item enable_printk
+
+Enables printk to the console. Requires root permission.
+
+=item printk_level(l$evel)
+
+Set the console printk level. See LEVELS below. Requires root permission.
+
+=item unread_count
+
+Returns the number of unread characters in the buffer.
+
+=item buffer_size
+
+Returns the size of the buffer.
+
+=back
+
+
+=head1 EXPORT
+
+None by default.
+
+
+=head1 LEVELS
+
+The following log levels are defined and exported as constants:
+
+=over 4
+
+=item KERN_EMERG    0  The system is unusable
+
+=item KERN_ALERT    1  Action must be taken immediately
+
+=item KERN_CRIT     2  Critical conditions
+
+=item KERN_ERR      3  Error conditions
+
+=item KERN_WARNING  4  Warning conditions
+
+=item KERN_NOTICE   5  Normal but significant condition
+
+=item KERN_INFO     6  Informational
+
+=item KERN_DEBUG    7  Debug-level messages
+
+=back
+
+=head1 INSTALLATION
+
+See perlmodinstall for information and options on installing Perl modules.
+
+=head1 SEE ALSO
+
+syslog(2), klogctl(2), dmesg(8)
+
+=head1 AUTHOR
+
+Simon Evans, E<lt>si@si.orgE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2012 by Simon Evans
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language itself.
+
+=head1 DISCLAIMER OF WARRANTY
+
+BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT
+WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER
+PARTIES PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND,
+EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE
+SOFTWARE IS WITH YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME
+THE COST OF ALL NECESSARY SERVICING, REPAIR, OR CORRECTION.
+
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE LIABLE
+TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL, OR
+CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE
+SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
+RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
+FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
+SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES.
+
+
+=cut
